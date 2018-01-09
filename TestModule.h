@@ -32,6 +32,33 @@
 
 
 
+// TODO: clean
+typedef struct GeneratorEventStorage
+{
+    double vertex_x_;
+    double vertex_y_;
+    double vertex_z_;
+    int nofparticles_;
+    std::vector<int>* pdgs_;
+    std::vector<double>* px_;
+    std::vector<double>* py_;
+    std::vector<double>* pz_;
+    
+    // new
+    int n_gamma_;
+    int n_positron_;
+    int n_electron_;
+    int n_alpha_;
+    
+    // TODO: some events might have other particles in them - at the moment
+    // i do not handle those cases
+    
+    // new - category flag for caffe
+    unsigned long long caffe_category_;
+} generatoreventstorage;
+
+
+
 typedef struct TimestampStorage
 {
     // 7 geiger timing
@@ -93,6 +120,8 @@ private:
     
     // Local storage
     TimestampStorage timestamp_;
+    
+    GeneratorEventStorage gen_;
     
     DPP_MODULE_REGISTRATION_INTERFACE(TestModule)
     

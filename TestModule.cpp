@@ -13,7 +13,7 @@
 //#include <geomtools/geometry_service.h>
 //#include <geomtools/manager.h>
 // - Bayeux/mctools:
-//#include <mctools/simulated_data.h>
+#include <mctools/simulated_data.h>
 //#include <mctools/utils.h>
 
 // This project :
@@ -301,7 +301,7 @@ TestModule::process(datatools::things& workItem)
                         cell_x.push_back(invalid);
                         cell_y.push_back(invalid);
                     }
-                    */
+                    
                 }
             
             }
