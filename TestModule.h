@@ -31,6 +31,26 @@
 //#include "falaise/snemo/datamodels/event_header.h"
 
 
+
+typedef struct TimestampStorage
+{
+    // 7 geiger timing
+    int count;
+    std::vector<double> * anodic_t0;
+    std::vector<double> * anodic_t1;
+    std::vector<double> * anodic_t2;
+    std::vector<double> * anodic_t3;
+    std::vector<double> * anodic_t4;
+    std::vector<double> * cathodic_t5;
+    std::vector<double> * cathodic_t6;
+    
+    // xy location of hit
+    std::vector<double> * cell_x;
+    std::vector<double> * cell_y;
+    
+} timestampstorage;
+
+
 class TestModule : public dpp::base_module
 {
 public:
@@ -70,6 +90,9 @@ private:
     mygsl::rng _random_;                       //!< internal PRN generator
     mygsl::rng* _external_random_;             //!< external PRN generator
     std::string _CD_label_;                    //!< The label of the calibrated data bank
+    
+    // Local storage
+    TimestampStorage timestamp_;
     
     DPP_MODULE_REGISTRATION_INTERFACE(TestModule)
     

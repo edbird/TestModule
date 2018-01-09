@@ -124,8 +124,21 @@ TestModule::~TestModule()
 dpp::base_module::process_status
 TestModule::process(datatools::things& workItem)
 {
+
     std::cout << "process" << std::endl;
     
+    // Tempoary local storage
+    // timestamp event data
+    std::vector<double> anodic_t0;
+    std::vector<double> anodic_t1;
+    std::vector<double> anodic_t2;
+    std::vector<double> anodic_t3;
+    std::vector<double> anodic_t4;
+    std::vector<double> cathodic_t5;
+    std::vector<double> cathodic_t6;
+    std::vector<double> cell_x;
+    std::vector<double> cell_y;
+
     DT_THROW_IF(!is_initialized(), std::logic_error,
                 "Module '" << get_name() << "' is not initialized !");
     
@@ -150,7 +163,7 @@ TestModule::process(datatools::things& workItem)
             //int timestamp_count = THCT.size();
             //std::cout << "timestamp_count = " << timestamp_count << std::endl;
             
-            for(int ix = 0; ix < timestamp_count; ++ ix)
+            //for(int ix = 0; ix < timestamp_count; ++ ix)
             for(int ix = 0; ix < THCT.size() /*hits_.nofhits_*/; ++ ix)
             {
                 const snemo::datamodel::calibrated_data::tracker_hit_handle_type & THHT = THCT.at(ix);
@@ -189,13 +202,13 @@ TestModule::process(datatools::things& workItem)
                         
                         //std::cout << "anode_t1=" << anode_t1 << std::endl;
                         
-                        timestamp_.anodic_t0.push_back(anode_time);
-                        timestamp_.anodic_t1.push_back(anode_t1);
-                        timestamp_.anodic_t2.push_back(anode_t2);
-                        timestamp_.anodic_t3.push_back(anode_t3);
-                        timestamp_.anodic_t4.push_back(anode_t4);
-                        timestamp_.cathodic_t5.push_back(CTH.get_top_time());
-                        timestamp_.cathodic_t6.push_back(CTH.get_bottom_time());
+                        /*timestamp_.*/anodic_t0.push_back(anode_time);
+                        /*timestamp_.*/anodic_t1.push_back(anode_t1);
+                        /*timestamp_.*/anodic_t2.push_back(anode_t2);
+                        /*timestamp_.*/anodic_t3.push_back(anode_t3);
+                        /*timestamp_.*/anodic_t4.push_back(anode_t4);
+                        /*timestamp_.*/cathodic_t5.push_back(CTH.get_top_cathode_time());
+                        /*timestamp_.*/cathodic_t6.push_back(CTH.get_bottom_cathode_time());
                         
                         //std::cout << anode_time << std::endl;
                         
