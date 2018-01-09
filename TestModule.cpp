@@ -180,11 +180,11 @@ TestModule::process(datatools::things& workItem)
                         double x2 = x0_cor + u2 * std::cos(-theta_cor) - v2 * std::sin(-theta_cor);
                         double y2 = y0_cor + u2 * std::sin(-theta_cor) + v2 * std::cos(-theta_cor);
                         
-                        anode_t1 = /*CTH.get_top_time() +*/ x1;
-                        anode_t2 = /*CTH.get_top_time() +*/ y1;
+                        anode_t1 = CTH.get_top_cathode_time() + x1;
+                        anode_t2 = CTH.get_top_cathode_time() + y1;
                         
-                        anode_t3 = /*CTH.get_bottom_time() +*/ x2;
-                        anode_t4 = /*CTH.get_bottom_time() +*/ y2;
+                        anode_t3 = CTH.get_bottom_cathode_time() + x2;
+                        anode_t4 = CTH.get_bottom_cathode_time() + y2;
                         
                         std::cout << "anode_t1=" << anode_t1 << std::endl;
                         
