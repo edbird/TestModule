@@ -125,7 +125,7 @@ dpp::base_module::process_status
 TestModule::process(datatools::things& workItem)
 {
 
-    std::cout << "process" << std::endl;
+    //std::cout << "process" << std::endl;
     
     // Tempoary local storage
     // timestamp event data
@@ -145,7 +145,7 @@ TestModule::process(datatools::things& workItem)
     // Process CD bank to obtains timestamp data
     if(workItem.has("CD"))
     {
-        std::cout << "CD" << std::endl;
+        //std::cout << "CD" << std::endl;
     
         const snemo::datamodel::calibrated_data & CD = workItem.get<snemo::datamodel::calibrated_data>("CD");
         //hits_.nofhits_ = CD.calibrated_tracker_hits().size();
@@ -215,7 +215,7 @@ TestModule::process(datatools::things& workItem)
                         // TIMESTAMP DATA IS OBTAINED HERE
                     }
                     
-                    /*
+                    
                     int32_t module{CTH.get_module()};
                     int32_t side{CTH.get_side()};
                     int32_t layer{CTH.get_layer()};
@@ -277,8 +277,10 @@ TestModule::process(datatools::things& workItem)
                     }
                     else
                     {
-                        cell_x.push_back(0.0 / 0.0);
-                        cell_y.push_back(0.0 / 0.0);
+                        double invalid;
+                        datatools::invalidate(invalid);
+                        cell_x.push_back(invalid);
+                        cell_y.push_back(invalid);
                     }
                     */
                 }
@@ -295,6 +297,89 @@ TestModule::process(datatools::things& workItem)
         //hits_.nofhits_ = 0;
         std::cout << "DOES NOT HAVE CD" << std::endl;
     }
+    
+    timestamp_.anodic_t0 = &anodic_t0;
+    timestamp_.anodic_t1 = &anodic_t1;
+    timestamp_.anodic_t2 = &anodic_t2;
+    timestamp_.anodic_t3 = &anodic_t3;
+    timestamp_.anodic_t4 = &anodic_t4;
+    timestamp_.cathodic_t5 = &cathodic_t5;
+    timestamp_.cathodic_t6 = &cathodic_t6;
+    timestamp_.cell_x = &cell_x;
+    timestamp_.cell_y = &cell_y;
+    
+    
+    
+    if(workItem.has("SD"))
+    {
+        const mctools::simulated_data& SD = workItem.get<mctools::simulated_data>("SD");
+        gen_.vertex_x_ = SD.get_vertex().x();
+        gen_.vertex_y_ = SD.get_vertex().y();
+        gen_.vertex_z_ = SD.get_vertex().z();
+        
+        // UID assembly
+        #if UID_ENABLE
+        uid_assembler<Long64_t> uid;
+        uid.add(genbb::primary_particle::particle_type::GAMMA);
+        uid.add(genbb::primary_particle::particle_type::POSITRON);
+        uid.add(genbb::primary_particle::particle_type::ELECTRON);
+        uid.add(genbb::primary_particle::particle_type::ALPHA);
+        uid.finalize();
+        
+        //TODO: all of these should have a CHECK before a GET
+        const mctools::simulated_data::primary_event_type primary_evt{SD.get_primary_event()};
+        for(unsigned int pix{0}; pix < primary_evt.get_number_of_particles(); ++ pix)
+        {
+            //if(primary_evt.has_particle())
+            //{
+            const genbb::primary_particle & pp{primary_evt.get_particle(pix)};
+            
+            if(pp.has_type())
+            {
+                int pp_t{pp.get_type()};
+                
+                uid.increment_field(pp_t);
+                /*if(pp_t == particle_type::GAMMA)
+                {
+                    uid.increment_field(particle_type::GAMMA);
+                }
+                else if(pp_t == particle_type::POSITRON)
+                {
+                
+                }
+                else if(pp_t == particle_type::ELECTRON)
+                {
+                
+                }
+                else if(pp_t == particle_type::ALPHA)
+                {
+                
+                }
+                */
+            }
+            //}
+        }
+        
+        // set the count for each particle type
+        gen_.n_gamma_ = uid.get(genbb::primary_particle::particle_type::GAMMA);
+        gen_.n_positron_ = uid.get(genbb::primary_particle::particle_type::POSITRON);
+        gen_.n_electron_ = uid.get(genbb::primary_particle::particle_type::ELECTRON);
+        gen_.n_alpha_ = uid.get(genbb::primary_particle::particle_type::ALPHA);
+        
+        // set the Caffe uid
+        gen_.caffe_category_ = uid.generate();
+        #else
+        gen_.caffe_category_ = 0;
+        #endif
+        
+        #if CAFFE_ENABLE
+        datum.set_label(gen_.caffe_category_);
+        #endif
+        
+    }
+    
+    
+    
     
     return PROCESS_OK;
 }
