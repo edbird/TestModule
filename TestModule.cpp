@@ -145,12 +145,13 @@ TestModule::process(datatools::things& workItem)
             
             const snemo::datamodel::calibrated_data::tracker_hit_collection_type & THCT = CD.calibrated_tracker_hits();
             
-            //timestamp_.count = THCT.size();
-            //std::cout << "timestamp_.count = " << timestamp_.count << std::endl;
-            int timestamp_count = THCT.size();
-            std::cout << "timestamp_count = " << timestamp_count << std::endl;
+            timestamp_.count = THCT.size();
+            std::cout << "timestamp_.count = " << timestamp_.count << std::endl;
+            //int timestamp_count = THCT.size();
+            //std::cout << "timestamp_count = " << timestamp_count << std::endl;
             
-            for(int ix = 0; ix < timestamp_count /*THCT.size()*/ /*hits_.nofhits_*/; ++ ix)
+            for(int ix = 0; ix < timestamp_count; ++ ix)
+            for(int ix = 0; ix < THCT.size() /*hits_.nofhits_*/; ++ ix)
             {
                 const snemo::datamodel::calibrated_data::tracker_hit_handle_type & THHT = THCT.at(ix);
                 if(THHT.has_data())
@@ -186,15 +187,15 @@ TestModule::process(datatools::things& workItem)
                         anode_t3 = CTH.get_bottom_cathode_time() + x2;
                         anode_t4 = CTH.get_bottom_cathode_time() + y2;
                         
-                        std::cout << "anode_t1=" << anode_t1 << std::endl;
+                        //std::cout << "anode_t1=" << anode_t1 << std::endl;
                         
-                        /*timestamp_.*/ //anodic_t0.push_back(anode_time);
-                        /*timestamp_.*/ //anodic_t1.push_back(anode_t1);
-                        /*timestamp_.*/ //anodic_t2.push_back(anode_t2);
-                        /*timestamp_.*/ //anodic_t3.push_back(anode_t3);
-                        /*timestamp_.*/ //anodic_t4.push_back(anode_t4);
-                        /*timestamp_.*/ //cathodic_t5.push_back(CTH.get_top_time());
-                        /*timestamp_.*/ //cathodic_t6.push_back(CTH.get_bottom_time());
+                        timestamp_.anodic_t0.push_back(anode_time);
+                        timestamp_.anodic_t1.push_back(anode_t1);
+                        timestamp_.anodic_t2.push_back(anode_t2);
+                        timestamp_.anodic_t3.push_back(anode_t3);
+                        timestamp_.anodic_t4.push_back(anode_t4);
+                        timestamp_.cathodic_t5.push_back(CTH.get_top_time());
+                        timestamp_.cathodic_t6.push_back(CTH.get_bottom_time());
                         
                         //std::cout << anode_time << std::endl;
                         
@@ -273,7 +274,7 @@ TestModule::process(datatools::things& workItem)
         }
         else
         {
-            //timestamp_.count = 0;
+            timestamp_.count = 0;
         }
     }
     else
