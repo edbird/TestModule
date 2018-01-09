@@ -20,6 +20,25 @@
 #include <falaise/snemo/datamodels/data_model.h>
 //#include <falaise/snemo/processing/services.h>
 
+
+// my own lib
+#if UID_ENABLE
+#include "/home/ecb/uid-assembler/uid_assembler.hpp"
+#endif
+
+// gen bb
+#if CAFFE_ENABLE
+#include <bayeux/genbb_help/primary_particle.h>
+#endif
+
+// caffe
+#define CPU_ONLY
+///home/ecb/caffe/include
+#if CAFFE_ENABLE
+#include "caffe/util/io.hpp"
+#include "caffe/proto/caffe.pb.h"
+#endif
+
 DPP_MODULE_REGISTRATION_IMPLEMENT(TestModule, "TestModule")
 
 bool TestModule::has_external_random() const {
