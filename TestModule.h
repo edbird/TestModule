@@ -35,14 +35,14 @@
 // TODO: clean
 typedef struct GeneratorEventStorage
 {
-    double vertex_x_;
-    double vertex_y_;
-    double vertex_z_;
-    int nofparticles_;
-    std::vector<int>* pdgs_;
-    std::vector<double>* px_;
-    std::vector<double>* py_;
-    std::vector<double>* pz_;
+    //double vertex_x_;
+    //double vertex_y_;
+    //double vertex_z_;
+    //int nofparticles_;
+    //std::vector<int>* pdgs_;
+    //std::vector<double>* px_;
+    //std::vector<double>* py_;
+    //std::vector<double>* pz_;
     
     // new
     int n_gamma_;

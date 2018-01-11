@@ -22,6 +22,7 @@
 
 
 // my own lib
+#define UID_ENABLE 1
 #if UID_ENABLE
 #include "/home/ecb/uid-assembler/uid_assembler.hpp"
 #endif
@@ -32,11 +33,11 @@
 #endif
 
 // caffe
-#define CPU_ONLY
 ///home/ecb/caffe/include
 #if CAFFE_ENABLE
 #include "caffe/util/io.hpp"
 #include "caffe/proto/caffe.pb.h"
+#define CPU_ONLY
 #endif
 
 DPP_MODULE_REGISTRATION_IMPLEMENT(TestModule, "TestModule")
@@ -255,9 +256,16 @@ TestModule::process(datatools::things& workItem)
                         std::cout << "side=" << side << std::endl;
                     }
                     
-                    if(layer < 0 || layer > 8) std::cout << "layer=" << layer << std::endl;
-                    if(row < 0 || row > 112) std::cout << "row=" << row << std::endl;
-                    std::cin.get();
+                    if(layer < 0 || layer > 8)
+                    {
+                        std::cout << "layer=" << layer << std::endl;
+                        std::cin.get();
+                    }
+                    if(row < 0 || row > 112)
+                    {
+                        std::cout << "row=" << row << std::endl;
+                        std::cin.get();
+                    }
                     
                     int32_t caffe_x{row};
                     int32_t caffe_y{side * 9 + layer};
@@ -327,18 +335,16 @@ TestModule::process(datatools::things& workItem)
     timestamp_.cell_x = &cell_x;
     timestamp_.cell_y = &cell_y;
     
-    
-    
     if(workItem.has("SD"))
     {
         const mctools::simulated_data& SD = workItem.get<mctools::simulated_data>("SD");
-        gen_.vertex_x_ = SD.get_vertex().x();
-        gen_.vertex_y_ = SD.get_vertex().y();
-        gen_.vertex_z_ = SD.get_vertex().z();
+        //gen_.vertex_x_ = SD.get_vertex().x();
+        //gen_.vertex_y_ = SD.get_vertex().y();
+        //gen_.vertex_z_ = SD.get_vertex().z();
         
         // UID assembly
         #if UID_ENABLE
-        uid_assembler<Long64_t> uid;
+        uid_assembler<unsigned long long> uid;
         uid.add(genbb::primary_particle::particle_type::GAMMA);
         uid.add(genbb::primary_particle::particle_type::POSITRON);
         uid.add(genbb::primary_particle::particle_type::ELECTRON);
@@ -385,8 +391,12 @@ TestModule::process(datatools::things& workItem)
         gen_.n_electron_ = uid.get(genbb::primary_particle::particle_type::ELECTRON);
         gen_.n_alpha_ = uid.get(genbb::primary_particle::particle_type::ALPHA);
         
+        std::cout << "**** UID ****" << std::endl;
+        uid.print_fields(std::cout); std::cout << std::endl;
+        
         // set the Caffe uid
         gen_.caffe_category_ = uid.generate();
+        std::cout << gen_.caffe_category_ << std::endl;
         #else
         gen_.caffe_category_ = 0;
         #endif
@@ -396,7 +406,10 @@ TestModule::process(datatools::things& workItem)
         #endif
         
     }
-    
+    else
+    {
+        std::cout << "Does not have SD!" << std::endl;
+    }
     
     
     
