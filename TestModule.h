@@ -12,6 +12,12 @@
 // - Bayeux/dpp:
 #include <dpp/base_module.h>
 
+
+// Third Party
+#include <TFile.h>
+#include <TTree.h>
+#include <TH1F.h>
+
 // - Bayeux
 //#include "bayeux/dpp/base_module.h"
 //#include "bayeux/mygsl/rng.h"
@@ -31,8 +37,22 @@
 //#include "falaise/snemo/datamodels/event_header.h"
 
 
+/******************************************************************************/
+/* ANALYSIS SCRIPT SWITCH (OUTPUT MODE / TYPE SWITCH)                         */
+/******************************************************************************/
+
+// This switch changes between the origional C++ analysis code
+// and a new Python analysis script (which is not debugged yet)
+
+#define CPLUSPLUS_ANALYSIS 1
+
+/******************************************************************************/
+/*                                                                            */
+/******************************************************************************/
+
 
 // TODO: clean
+// TODO: should remove this if CPLUSPLUS_ANALYSIS
 typedef struct GeneratorEventStorage
 {
     //double vertex_x_;
@@ -55,9 +75,56 @@ typedef struct GeneratorEventStorage
     
     // new - category flag for caffe
     unsigned long long caffe_category_;
-} generatoreventstorage;
+}; //generatoreventstorage;
 
 
+// Notes:
+// TestTankStorage is different from the other storage formats.
+// Other storage formats use vectors to keep all data for each
+// event separated.
+// The C++ analysis code loops over a single loop and the data
+// is formatted such that all events are "rolled together".
+// In other words: Each event is a set of timestamps rather than
+// a vector of timestamps.
+// The regular output file is always created. The C++ analysis
+// file is only created if the CPLUSPLUS_ANALSIS preprocessor
+// flag is set.
+
+#if CPLUSPLUS_ANALYSIS
+    typedef struct TestTankStorage
+    {
+        Float_t time = 0;
+        Float_t delay = 0;
+        Float_t delay_since_good_trigger = 0;
+        Int_t duration = 0;
+        Float_t plasma_propagation_time = 0;
+        Bool_t good_trigger = 0;
+        Bool_t prev_good_trigger = 0;
+        Bool_t with_cathode = 0;
+        Float_t anode_peak = 0;
+        Float_t anode_time = 0;
+        Float_t cathode_peak = 0;
+        Float_t cathode_time = 0;
+        Float_t position = 0;
+        Float_t half_position = 0;
+        Float_t stop1 = 0;
+        Float_t stop1_peak = 0;
+        Float_t stop1_type = 0;
+        Float_t stop2 = 0;
+        Float_t stop2_peak = 0;
+        Float_t stop2_type = 0;
+        Int_t stopA = 0;
+        Float_t deriv_rms = 0;
+        Float_t feast_t0 = 0;
+        Float_t feast_t1 = 0;
+        Float_t feast_t2 = 0;
+        Float_t feast_t3 = 0;
+        Float_t feast_t4 = 0;
+        TH1F *anode_histo = (TH1F*)0;
+        TH1F *deriv_histo = (TH1F*)0;
+        TH1F *cathode_histo = (TH1F*)0;
+    };
+#endif
 
 typedef struct TimestampStorage
 {
@@ -74,8 +141,12 @@ typedef struct TimestampStorage
     // xy location of hit
     std::vector<double> * cell_x;
     std::vector<double> * cell_y;
-    
-} timestampstorage;
+
+    // plasma propagation time
+    // vector format, as obtained from calibrated_tracker_hit class
+    std::vector<double> * plasma_propagation_time;
+
+}; //timestampstorage;
 
 
 class TestModule : public dpp::base_module
@@ -118,10 +189,30 @@ private:
     mygsl::rng* _external_random_;             //!< external PRN generator
     std::string _CD_label_;                    //!< The label of the calibrated data bank
     
+    #if CPLUSPLUS_ANALYSIS
+        // Local storage
+        // Matches data obtained from testtank
+        // Additional variables for C++ analysis now in structure
+        TestTankStorage store_;
+    #endif
+    
     // Local storage
     TimestampStorage timestamp_;
-    
     GeneratorEventStorage gen_;
+    
+    // configurable data member
+    std::string filename_output_;
+    #if CPLUSPLUS_ANALYSIS
+        std::string filename_output_cpp_;
+    #endif
+
+    // ROOT variables
+    TFile* hfile_;
+    TTree* tree_;
+    #if CPLUSPLUS_ANALYSIS
+        TFile* hfile_cpp_;
+        TTree* tree_cpp_;
+    #endif
     
     DPP_MODULE_REGISTRATION_INTERFACE(TestModule)
     
