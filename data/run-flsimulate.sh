@@ -31,6 +31,8 @@ function main
     NUMBER_OF_EVENTS=10000
     NUMBER_OF_EVENTS_FLAG="TRUE"
 
+    RUN_FLAG="TRUE"
+
     if (( $ARG_C > 1 ))
     then
         while true
@@ -70,10 +72,13 @@ function main
             fi
 
         done
+    else
+        echo "Usage: $0 -n NUMBER_OF_EVENTS"
+        RUN_FLAG="FALSE"
     fi
 
     
-    if [ "$NUMBER_OF_EVENTS_FLAG" == "TRUE" ]
+    if [ "$NUMBER_OF_EVENTS_FLAG" == "TRUE" ] && [ "$RUN_FLAG" == "TRUE" ]
     then
         # Edit simulation.conf
         #cat simulation.conf.backup

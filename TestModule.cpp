@@ -1,5 +1,11 @@
 #include "TestModule.h"
 
+
+// Preprocessor Options
+#define COUT_TIMESTAMP 0
+#define COUT_TIMESTAMP_WAIT 0  
+
+
 // Standard library:
 #include <sstream>
 #include <stdexcept>
@@ -103,32 +109,38 @@ void TestModule::initialize(const datatools::properties& myConfig,
     // the key exists. datatools::properties throws an exception if
     // the key isn't in the config, so catch this if thrown and don't do
     // anything
-    try
-    {
-        myConfig.fetch("filename_out",this->filename_output_);
-    }
-    catch(std::logic_error& e)
-    {
-    }
+    #if PYTHON_ANALYSIS
+        try
+        {
+            myConfig.fetch("filename_out", this->filename_output_);
+        }
+        catch(std::logic_error& e)
+        {
+        }
+    #endif
 
     // Other configurable data member
-    try
-    {
-        myConfig.fetch("filename_out_cpp", this->filename_output_cpp_);
-    }
-    catch(std::logic_error& e)
-    {
-    }
+    #if CPLUSPLUS_ANALYSIS
+        try
+        {
+            myConfig.fetch("filename_out_cpp", this->filename_output_cpp_);
+        }
+        catch(std::logic_error& e)
+        {
+        }
+    #endif
     
     // ROOT
     std::cout << "In INIT: create TFile " << std::endl;
     
-    // Variables for Python analysis
-    hfile_ = new TFile(filename_output_.c_str(), "RECREATE", "Output file of Simulation data");
-    hfile_->cd();
+    #if PYTHON_ANALYSIS
+        // Variables for Python analysis
+        hfile_ = new TFile(filename_output_.c_str(), "RECREATE", "Output file of Simulation data");
+        hfile_->cd();
     
-    tree_ = new TTree("TSD", "TSD"); // timestamp data
-    tree_->SetDirectory(hfile_);
+        tree_ = new TTree("TSD", "TSD"); // timestamp data
+        tree_->SetDirectory(hfile_);
+    #endif
     
     // header data
     //tree_->Branch("header.runnumber",&header_.runnumber_);
@@ -143,23 +155,25 @@ void TestModule::initialize(const datatools::properties& myConfig,
     //tree_->Branch("truth.vertex_z", &gen_.vertex_z_);
     
     // timestamp data    
-    tree_->Branch("timestamp.anodic_t0", &timestamp_.anodic_t0);
-    tree_->Branch("timestamp.anodic_t1", &timestamp_.anodic_t1);
-    tree_->Branch("timestamp.anodic_t2", &timestamp_.anodic_t2);
-    tree_->Branch("timestamp.anodic_t3", &timestamp_.anodic_t3);
-    tree_->Branch("timestamp.anodic_t4", &timestamp_.anodic_t4);
-    tree_->Branch("timestamp.cathodic_t5", &timestamp_.cathodic_t5);
-    tree_->Branch("timestamp.cathodic_t6", &timestamp_.cathodic_t6);
+    #if PYTHON_ANALYSIS
+        tree_->Branch("timestamp.anodic_t0", &timestamp_.anodic_t0);
+        tree_->Branch("timestamp.anodic_t1", &timestamp_.anodic_t1);
+        tree_->Branch("timestamp.anodic_t2", &timestamp_.anodic_t2);
+        tree_->Branch("timestamp.anodic_t3", &timestamp_.anodic_t3);
+        tree_->Branch("timestamp.anodic_t4", &timestamp_.anodic_t4);
+        tree_->Branch("timestamp.cathodic_t5", &timestamp_.cathodic_t5);
+        tree_->Branch("timestamp.cathodic_t6", &timestamp_.cathodic_t6);
+        
+        tree_->Branch("timestamp.cell_x", &timestamp_.cell_x);
+        tree_->Branch("timestamp.cell_y", &timestamp_.cell_y);
+        
+        tree_->Branch("truth.n_gamma", &gen_.n_gamma_);
+        tree_->Branch("truth.n_positron", &gen_.n_positron_);
+        tree_->Branch("truth.n_electron", &gen_.n_electron_);
+        tree_->Branch("truth.n_alpha", &gen_.n_alpha_);
+        tree_->Branch("truth.caffe_category", &gen_.caffe_category_);
+    #endif
     
-    tree_->Branch("timestamp.cell_x", &timestamp_.cell_x);
-    tree_->Branch("timestamp.cell_y", &timestamp_.cell_y);
-    
-    tree_->Branch("truth.n_gamma", &gen_.n_gamma_);
-    tree_->Branch("truth.n_positron", &gen_.n_positron_);
-    tree_->Branch("truth.n_electron", &gen_.n_electron_);
-    tree_->Branch("truth.n_alpha", &gen_.n_alpha_);
-    tree_->Branch("truth.caffe_category", &gen_.caffe_category_);
-
     // Variables for C++ analysis
     #if CPLUSPLUS_ANALYSIS
         // Open output file and create tree for C++ analysis code
@@ -254,15 +268,17 @@ void TestModule::reset()
     _external_random_ = 0;
     _set_defaults();
     
-    // write the output, finished streaming
-    hfile_->cd();
-    tree_->Write();
-    hfile_->Close();
-    std::cout << "In reset: finished conversion, file closed " << std::endl;
+    #if PYTHON_ANALYSIS
+        // write the output, finished streaming
+        hfile_->cd();
+        tree_->Write();
+        hfile_->Close();
+        std::cout << "In reset: finished conversion, file closed " << std::endl;
     
-    // clean up
-    //delete tree_;
-    delete hfile_;
+        // clean up
+        //delete tree_;
+        delete hfile_;
+    #endif
 
     // Clean up (C++ analysis code)
     #if CPLUSPLUS_ANALYSIS
@@ -274,8 +290,13 @@ void TestModule::reset()
     #endif
 
     // Reset default filenames
-    filename_output_ = "default.root";
-    filename_output_cpp_ = "default_cpp.root";
+    #if PYTHON_ANALYSIS
+        filename_output_ = "default.root";
+    #endif
+
+    #if CPLUSPLUS_ANALYSIS
+        filename_output_cpp_ = "default_cpp.root";
+    #endif
 
     this->base_module::_set_initialized(false);
     
@@ -295,9 +316,14 @@ TestModule::TestModule() : dpp::base_module()
     _external_random_ = 0;
     _set_defaults();
     
-    filename_output_ = "default.root";
-    filename_output_cpp_ = "default_cpp.root";
-    
+    #if PYTHON_ANALYSIS
+        filename_output_ = "default.root";
+    #endif
+
+    #if CPLUSPLUS_ANALYSIS
+        filename_output_cpp_ = "default_cpp.root";
+    #endif
+
     return;
 }
 
@@ -393,6 +419,7 @@ TestModule::process(datatools::things& workItem)
 
     // Tempoary local storage
     // timestamp event data
+    // NOTE: required for both C++ and Python analysis modes
     std::vector<double> anodic_t0;
     std::vector<double> anodic_t1;
     std::vector<double> anodic_t2;
@@ -440,36 +467,63 @@ TestModule::process(datatools::things& workItem)
                         double plasma_propagation_time_ = CTH.get_plasma_propagation_time();
                         
                         //for(size_t ix{0}; ix < 
-                        double anode_time = CTH.get_anode_time();
+                        const double anode_time = CTH.get_anode_time(); // microsecond?
                         
                         double anode_t1, anode_t2, anode_t3, anode_t4;
                         
+                        /// NOTE: C++ analysis code (with TestTank data) used unit of
+                        // microsecond throughout code
+                        // Falaise uses unknown unit (presumed to be SI) and uses
+                        // CLHEP::microsecond to convert to correct unit
+
                         // parameters from tracker-signals fit
-                        double x0_cor = -0.183547;
-                        double y0_cor = 0.179927;
-                        double sigma_x_cor = 0.0458669;
-                        double sigma_y_cor = 0.0190218;
-                        double theta_cor = -0.363398;
+                        // _cor -> taken from the correlation plot in the C++ analysis code
+                        // TODO: check codes are the same (there are 2 lots in the C++ code?)
+                        const double x0_cor = CLHEP::microsecond * -0.183547; // probably micro-second
+                        const double y0_cor = CLHEP::microsecond * 0.179927;
+                        const double sigma_x_cor = CLHEP::microsecond * 0.0458669; // microsecond ?
+                        const double sigma_y_cor = CLHEP::microsecond * 0.0190218;
+                        const double theta_cor = -0.363398; // rad?
                         
-                        double u1 = _get_random().gaussian(0.0, sigma_x_cor);
-                        double v1 = _get_random().gaussian(0.0, sigma_y_cor);
-                        double x1 = x0_cor + u1 * std::cos(-theta_cor) - v1 * std::sin(-theta_cor);
-                        double y1 = y0_cor + u1 * std::sin(-theta_cor) + v1 * std::cos(-theta_cor);
+                        const double u1 = _get_random().gaussian(0.0, sigma_x_cor);
+                        const double v1 = _get_random().gaussian(0.0, sigma_y_cor);
+                        const double x1 = x0_cor + u1 * std::cos(-theta_cor) - v1 * std::sin(-theta_cor);
+                        const double y1 = y0_cor + u1 * std::sin(-theta_cor) + v1 * std::cos(-theta_cor);
                         
-                        double u2 = _get_random().gaussian(0.0, sigma_x_cor);
-                        double v2 = _get_random().gaussian(0.0, sigma_y_cor);
-                        double x2 = x0_cor + u2 * std::cos(-theta_cor) - v2 * std::sin(-theta_cor);
-                        double y2 = y0_cor + u2 * std::sin(-theta_cor) + v2 * std::cos(-theta_cor);
+                        const double u2 = _get_random().gaussian(0.0, sigma_x_cor);
+                        const double v2 = _get_random().gaussian(0.0, sigma_y_cor);
+                        const double x2 = x0_cor + u2 * std::cos(-theta_cor) - v2 * std::sin(-theta_cor);
+                        const double y2 = y0_cor + u2 * std::sin(-theta_cor) + v2 * std::cos(-theta_cor);
                         
+                        //anode_t1 = CTH.get_top_cathode_time() + x1;
+                        //anode_t2 = CTH.get_top_cathode_time() + y1;
+                        
+                        //anode_t3 = CTH.get_bottom_cathode_time() + x2;
+                        //anode_t4 = CTH.get_bottom_cathode_time() + y2;
+                        
+
+                        // timestamps T1, T3 go together
                         anode_t1 = CTH.get_top_cathode_time() + x1;
-                        anode_t2 = CTH.get_top_cathode_time() + y1;
+                        anode_t3 = CTH.get_top_cathode_time() + y1;
                         
-                        anode_t3 = CTH.get_bottom_cathode_time() + x2;
+                        // T2, T4 go together
+                        anode_t2 = CTH.get_bottom_cathode_time() + x2;
                         anode_t4 = CTH.get_bottom_cathode_time() + y2;
-                        
+
                         //std::cout << "anode_t1=" << anode_t1 << std::endl;
                         
-                        /*timestamp_.*/anodic_t0.push_back(anode_time); // TODO: is this an absolute time, or relative to something?
+                        // NOTE TO SELF: To make data from this simulation match up with the test tank data,
+                        // we replace the anode T0 offset with the mean value as obtained from the TestTank
+                        // data
+                        // DO NOT PUSH BACK THE anode_time !!!
+                        // Push back the mean anode offset
+                        // TODO: GET THE VARIANCE BACK HERE
+                        const double testtank_mean_anode_time = CLHEP::microsecond * 4.808655335; // std::cout.precision(10)
+                        const double falaise_mean_anode_time = CLHEP::microsecond * 1.438549573;
+                        const double testtank_anode_time = testtank_mean_anode_time + anode_time - falaise_mean_anode_time;
+                        anodic_t0.push_back(testtank_anode_time);
+                        //anodic_t0.push_back(testtank_mean_anode_time);
+                        /*timestamp_.*///anodic_t0.push_back(anode_time); // TODO: is this an absolute time, or relative to something?
                         /*timestamp_.*/anodic_t1.push_back(anode_t1); // If cathode top/bottom times are absolute this is correct
                         /*timestamp_.*/anodic_t2.push_back(anode_t2);
                         /*timestamp_.*/anodic_t3.push_back(anode_t3);
@@ -663,7 +717,9 @@ TestModule::process(datatools::things& workItem)
     }
     
     
-    tree_->Fill();
+    #if PYTHON_ANALYSIS
+        tree_->Fill();
+    #endif
     
     // At this point data is processed and stored in tree for Python analysis code
     // Re-format data for C++ analysis code
@@ -712,6 +768,29 @@ TestModule::process(datatools::things& workItem)
         store_.cathode_time = cathode_time;
 
         store_.plasma_propagation_time = plasma_propagation_time;
+
+
+        // Print values
+        #if COUT_TIMESTAMP
+            std::cout << "cathode               : " << store_.cathode_time << "\n"\
+                      << "t0                    : " << store_.feast_t0 << "\n"\
+                      << "t1                    : " << store_.feast_t1 << "\n"\
+                      << "t3                    : " << store_.feast_t3 << "\n"\
+                      << "t2                    : " << store_.feast_t2 << "\n"\
+                      << "t4                    : " << store_.feast_t4 << "\n"\
+                      << "cathode + t0          : " << store_.cathode_time + store_.feast_t0 << "\n"\
+                      << "t1 - (cathode + t0)   : " << store_.feast_t1 - (store_.cathode_time + store_.feast_t0) << "\n"\
+                      << "t3 - (cathode + t0)   : " << store_.feast_t3 - (store_.cathode_time + store_.feast_t0) << "\n"\
+                      << "t2 - (cathode + t0)   : " << store_.feast_t2 - (store_.cathode_time + store_.feast_t0) << "\n"\
+                      << "t4 - (cathode + t0)   : " << store_.feast_t4 - (store_.cathode_time + store_.feast_t0) << "\n";
+        
+            std::cout.flush();
+
+            #if COUT_TIMESTAMP_WAIT
+                std::cin.get();
+            #endif
+        #endif
+
 
         // Fill tree
         tree_cpp_->Fill();

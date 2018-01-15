@@ -45,6 +45,7 @@
 // and a new Python analysis script (which is not debugged yet)
 
 #define CPLUSPLUS_ANALYSIS 1
+#define PYTHON_ANALYSIS 0
 
 /******************************************************************************/
 /*                                                                            */
@@ -53,6 +54,7 @@
 
 // TODO: clean
 // TODO: should remove this if CPLUSPLUS_ANALYSIS
+//#if PYTHON_ANALYSIS
 typedef struct GeneratorEventStorage
 {
     //double vertex_x_;
@@ -76,7 +78,7 @@ typedef struct GeneratorEventStorage
     // new - category flag for caffe
     unsigned long long caffe_category_;
 }; //generatoreventstorage;
-
+//#endif
 
 // Notes:
 // TestTankStorage is different from the other storage formats.
@@ -201,14 +203,18 @@ private:
     GeneratorEventStorage gen_;
     
     // configurable data member
-    std::string filename_output_;
+    #if PYTHON_ANALYSIS
+        std::string filename_output_;
+    #endif
     #if CPLUSPLUS_ANALYSIS
         std::string filename_output_cpp_;
     #endif
 
     // ROOT variables
-    TFile* hfile_;
-    TTree* tree_;
+    #if PYTHON_ANALYSIST
+        File* hfile_;
+        TTree* tree_;
+    #endif
     #if CPLUSPLUS_ANALYSIS
         TFile* hfile_cpp_;
         TTree* tree_cpp_;
