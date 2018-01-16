@@ -557,6 +557,7 @@ TestModule::process(datatools::things& workItem)
                         // Instead: Add the anode time as obtained from MC simulation here.
 
                         // inverse transform sampling
+                        // https://en.wikipedia.org/wiki/Inverse_transform_sampling
                         // probability distribution
                         /*
                                 + A * (x - a) / (b - a) ; a <= x < b
