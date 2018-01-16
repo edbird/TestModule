@@ -518,11 +518,129 @@ TestModule::process(datatools::things& workItem)
                         // DO NOT PUSH BACK THE anode_time !!!
                         // Push back the mean anode offset
                         // TODO: GET THE VARIANCE BACK HERE
-                        const double testtank_mean_anode_time = CLHEP::microsecond * 4.808655335; // std::cout.precision(10)
-                        const double falaise_mean_anode_time = CLHEP::microsecond * 1.438549573;
-                        const double testtank_anode_time = testtank_mean_anode_time + anode_time - falaise_mean_anode_time;
-                        anodic_t0.push_back(testtank_anode_time);
+                      //  const double testtank_mean_anode_time = CLHEP::microsecond * 4.808655335; // std::cout.precision(10)
+                      //  const double falaise_mean_anode_time = CLHEP::microsecond * 1.438549573;
+                      //  const double falaise_to_testtank_anode_time = testtank_mean_anode_time - falaise_mean_anode_time; // microsecond
+                        //const double testtank_anode_time = testtank_mean_anode_time + anode_time - falaise_mean_anode_time;
+                      //  const double testtank_anode_time = falaise_to_testtank_anode_time + anode_time;
+                        //anodic_t0.push_back(testtank_mean_anode_time); //testtank_anode_time);
+                        //anodic_t0.push_back(anode_time);
                         //anodic_t0.push_back(testtank_mean_anode_time);
+
+                        // NOTES: The anode time as computed in this simulation does not appear to 
+                        // follow the same distribution as the anode time as in the testtank data
+                        // This might be expected as the physics of both processes is probably
+                        // unrelated.
+                        // Therefore the testtank_mean_anode_time is added to tX timestamps (to shift
+                        // them to match the timestamps obtained from the testtank data
+                        // The t0 timestamp was set to testtank_mean_anode_time, however it has now
+                        // been put back to anode_time, so that the distribution can be compared
+                        // between testtank and simulation data.
+
+                        // NOTE: anode_t0 is effectively shifted by a constant to make it line up with
+                        // the mean value obtained from the testtank data
+                        // Therefore the other anode_tX times need to be shifted by this same constant
+                        // to make all the anode times match up with the values from the testtank data
+                        //anode_t1 += testtank_mean_anode_time - falaise_mean_anode_time;
+                        //const double falaise_to_testtank_anode_time = testtank_mean_anode_time;
+                        //anode_t1 += falaise_to_testtank_anode_time;
+                        //anode_t2 += falaise_to_testtank_anode_time;
+                        //anode_t3 += falaise_to_testtank_anode_time;
+                        //anode_t4 += falaise_to_testtank_anode_time;
+
+                        // NOTE: Review: Have concluded that falaise and testtank data feast_t0
+                        // timestamps are distributed differently. (Different physics / process)
+                        // Therefore have removed anode_time from this section of code: now
+                        // simualate anode_t0 using parameterized model. (Similar to top-hat
+                        // function)
+                        // Do NOT add on the mean testtank anode time.
+                        // Instead: Add the anode time as obtained from MC simulation here.
+
+                        // inverse transform sampling
+                        // probability distribution
+                        /*
+                                + A * (x - a) / (b - a) ; a <= x < b
+                        f(x)= --+ A                     ; b <= x < c
+                                + A * (x - c) / (d - c) ; c <= x < d
+                                + 0                     ; otherwise
+                        */
+                        // cumulative distribution
+                        /*
+                                + 0     ; x <= a
+                                + A * (0.5 * x**2.0 - a * x) / (b - a)      ; a <= x < b
+                        F(x)= --+ A * x + A * (0.5 * b**2.0 - a * b) / (b - a) - A * (0.5 * a**2.0 - a * a) / (b - a)       ; b <= x < c
+                                + A * (0.5 * x**2.0 - c * c) / (d - c) + ... - ... + ... - ...      ; c <= x < d
+                                + 1 ?       ; d <= x
+
+                        */
+
+                        // generate number in range 0.0, 1.0 for translation
+                        //const double anode_t0_linear_gen = _get_random().uniform(); // TODO: does this include 1.0 and 0.0 ?
+                        const double u = _get_random().uniform();
+
+                        // function parameters (constants)
+                        // TODO: these parameters were obtained from a fit which did not
+                        // converge as expected
+                        const double a = 4.78067e+00;
+                        const double b = 4.78916e+00;
+                        const double c = 4.82932e+00;
+                        const double d = 4.83559e+00;
+                        const double param[4] = {a, b, c, d};
+
+                        const double P = d + c - b - a; // useful constant
+                        //const double 
+
+                        const double N = 0.5 * P; // normalization constant
+
+                        // integral region constants
+                        const double I_0 = (b - a) / P; // total integral region 1
+                        const double I_1 = 2.0 * (c - b) / P; // total integral region 2
+                        const double I_2 = (d - c) / P; // total integral region 3
+
+                        //std::cout.precision(12);
+                        //std::cout << "total I's: " << I_0 + I_1 + I_2 << std::endl;
+                        //std::cin.get();
+
+                        double xx = 0.0;
+
+                        if(u <= I_0)
+                        {
+                            // invert
+                            const double x = std::sqrt(u * (b - a) * P) + a;
+                            xx = x;
+                        }
+                        else if(u <= I_0 + I_1)
+                        {
+                            // invert
+                            const double x = 0.5 * (u * P + b + a);
+                            xx = x;
+                        }
+                        else if(u <= I_0 + I_1 + I_2)
+                        {
+                            // invert
+                            const double A = 1.0;
+                            const double B = -2.0 * d;
+                            const double C = (c * c) + (d - c) * (u * P + b + a);
+                            const double x = (-B - std::sqrt(B * B - 4.0 * A * C)) / (2.0 * A); // TODO: is it the right solution?
+                            xx = x;
+                            //std::cout << "A=" << A << " B=" << B << " C=" << C << std::endl;
+                            //std::cin.get();
+                        }
+                        else
+                        {
+                            std::cerr << "arithmatic error: u = " << u << " I_0 + I_1 + I_2 = " << I_0 + I_1 + I_2 << std::endl;
+                        }
+                        
+                        // TODO: CORRELATION BETWEEN T0 AND TX
+
+                        double anode_t0 = xx * CLHEP::microsecond; // 1000.0;
+                        anode_t1 += anode_t0;
+                        anode_t2 += anode_t0;
+                        anode_t3 += anode_t0;
+                        anode_t4 += anode_t0;
+
+
+                        anodic_t0.push_back(anode_t0);
                         /*timestamp_.*///anodic_t0.push_back(anode_time); // TODO: is this an absolute time, or relative to something?
                         /*timestamp_.*/anodic_t1.push_back(anode_t1); // If cathode top/bottom times are absolute this is correct
                         /*timestamp_.*/anodic_t2.push_back(anode_t2);
