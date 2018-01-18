@@ -640,6 +640,10 @@ TestModule::process(datatools::things& workItem)
                         anode_t3 += anode_t0;
                         anode_t4 += anode_t0;
 
+                        // t1 correlated with t3
+                        // t2 correlated with t4
+                        // sort the order, if wrong
+                        // TODO
 
                         anodic_t0.push_back(anode_t0);
                         /*timestamp_.*///anodic_t0.push_back(anode_time); // TODO: is this an absolute time, or relative to something?
