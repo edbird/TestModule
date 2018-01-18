@@ -80,14 +80,14 @@ function main
     
     if [ "$NUMBER_OF_EVENTS_FLAG" == "TRUE" ] && [ "$RUN_FLAG" == "TRUE" ]
     then
-        # Edit simulation.conf
+        # Edit flsimualate.conf
         #cat simulation.conf.backup
-        write_config > ./simulation.conf
+        write_config > ./flsimulate.conf
         #cat simulation.conf
         #diff simulation.conf.backup simulation.conf
 
         # Run job
-        /home/ecb/Falaise/build/BuildProducts/bin/flsimulate -c simulation.conf --output-file flsimulate.brio
+        /home/ecb/Falaise/build/BuildProducts/bin/flsimulate -c flsimulate.conf --output-file flsimulate.brio
     
     else
         echo "[ ERROR ] : Invalid NUMBER_OF_EVENTS"

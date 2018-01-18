@@ -89,7 +89,8 @@ store_mc_hit_id : boolean = 1
 
 # #@description Plasma longitudinal speed
 # plasma_longitudinal_speed : real as speed = 5.0 cm/us
-plasma_longitudinal_speed : real as velocity = 5.0 cm/us #7.0344758198 cm/us
+plasma_longitudinal_speed : real as velocity = 7.0 cm/us
+# 7.0344758198 cm/us
 
 # #@description Error on plasma longitudinal speed
 # sigma_plasma_longitudinal_speed : real as speed = 0.5 cm/us
