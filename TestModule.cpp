@@ -502,13 +502,63 @@ TestModule::process(datatools::things& workItem)
                         //anode_t4 = CTH.get_bottom_cathode_time() + y2;
                         
 
+                        // OLD
                         // timestamps T1, T3 go together
-                        anode_t1 = CTH.get_top_cathode_time() + x1;
-                        anode_t3 = CTH.get_top_cathode_time() + y1;
+                        //anode_t1 = CTH.get_top_cathode_time() + x1;
+                        //anode_t3 = CTH.get_top_cathode_time() + y1;
                         
                         // T2, T4 go together
-                        anode_t2 = CTH.get_bottom_cathode_time() + x2;
-                        anode_t4 = CTH.get_bottom_cathode_time() + y2;
+                        //anode_t2 = CTH.get_bottom_cathode_time() + x2;
+                        //anode_t4 = CTH.get_bottom_cathode_time() + y2;
+                        
+                        // NEW
+                        // timestamps T1, T3 go together
+                        anode_t1 = x1;
+                        anode_t3 = y1;
+                        
+                        // T2, T4 go together
+                        anode_t2 = x2;
+                        anode_t4 = y2;
+
+                        // TODO: implement into this simulation the effect of when the anode times
+                        // all lie on top of each other due to the event being in the middle of the
+                        // anode wire
+
+                        if(CTH.get_top_cathode_time() <= CTH.get_bottom_cathode_time())
+                        {
+                            anode_t1 += CTH.get_top_cathode_time();
+                            anode_t3 += CTH.get_top_cathode_time();
+                            anode_t2 += CTH.get_bottom_cathode_time();
+                            anode_t4 += CTH.get_bottom_cathode_time();
+                        }
+                        else
+                        {
+                            anode_t1 += CTH.get_bottom_cathode_time();
+                            anode_t3 += CTH.get_bottom_cathode_time();
+                            anode_t2 += CTH.get_top_cathode_time();
+                            anode_t4 += CTH.get_top_cathode_time();
+                        }
+
+                        /*
+                        std::vector<double> sort_anode_time;
+                        sort_anode_time.push_back(anode_t1);
+                        sort_anode_time.push_back(anode_t2);
+                        sort_anode_time.push_back(anode_t3);
+                        sort_anode_time.push_back(anode_t4);
+                        std::sort(sort_anode_time.begin(), sort_anode_time.end());
+                            // NOTE: Not sure if this method produces exactly the right results for all possible events
+                        anode_t1 = sort_anode_time.at(0);
+                        anode_t3 = sort_anode_time.at(2);
+                        anode_t2 = sort_anode_time.at(1);
+                        anode_t3 = sort_anode_time.at(3);
+                        */
+
+                        // 2018-01-22: NOTE: The timestamps are always ordered such that
+                        // t0 < t1 < t3 < t2 < t4
+                        // Therefore it is (probably) important to choose the cathode time
+                        // which goes with (t1, t3) to be the smaller of the 2
+                        // At the moment I have just sorted the anode times - this may not
+                        // be the best method!
 
                         //std::cout << "anode_t1=" << anode_t1 << std::endl;
                         
