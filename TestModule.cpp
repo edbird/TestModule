@@ -559,6 +559,8 @@ TestModule::process(datatools::things& workItem)
                         // which goes with (t1, t3) to be the smaller of the 2
                         // At the moment I have just sorted the anode times - this may not
                         // be the best method!
+                        // EDIT: Have now implemented it this way - not sure if the ordering
+                        // is always maintained !!!
 
                         //std::cout << "anode_t1=" << anode_t1 << std::endl;
                         
