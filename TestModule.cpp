@@ -34,6 +34,7 @@
 #endif
 
 // gen bb
+#define CAFFE_ENABLE 1
 #if CAFFE_ENABLE
     #include <bayeux/genbb_help/primary_particle.h>
 #endif
@@ -274,9 +275,6 @@ void TestModule::reset()
         tree_->Write();
         hfile_->Close();
         std::cout << "In reset: finished conversion, file closed " << std::endl;
-    
-        // clean up
-        //delete tree_;
         delete hfile_;
     #endif
 
@@ -455,6 +453,15 @@ TestModule::process(datatools::things& workItem)
             //int timestamp_count = THCT.size();
             //std::cout << "timestamp_count = " << timestamp_count << std::endl;
             
+            // create Caffe data
+            // init to "blank" (-1.0f)
+            int32_t ix_max{2 * 9 * 113};
+            google::protobuf::RepeatedField<float>* datumFloatData = datum.mutable_float_data();
+            for(int32_t ix{0}; ix < ix_max; ++ ix)
+            {
+                datumFloatData->Add(-1.0f); // TODO! THIS LOOKS LIKE HITS ON z=0.0 !!! FIXME
+            }
+
             //for(int ix = 0; ix < timestamp_count; ++ ix)
             for(int ix = 0; ix < THCT.size() /*hits_.nofhits_*/; ++ ix)
             {
@@ -748,24 +755,30 @@ TestModule::process(datatools::things& workItem)
                     
                     int32_t caffe_x{row};
                     int32_t caffe_y{side * 9 + layer};
-                    int32_t ix_max{9 * 113};
-                    int32_t caffe_ix{9 * caffe_y + caffe_x};
+                    int32_t ix_max{2 * 9 * 113};
+                    int32_t caffe_ix{113 * caffe_y + caffe_x};
+                    if(caffe_ix > ix_max - 1)
+                    {
+                        std::cout << "caffe_ix=" << caffe_ix << std::endl;
+                    }
                     
                     // TODO: PROBLEM: this only sets the z_pos for a single cell, and yet we itterate over all
                     // cells - so need to create the data FIRST with BLANK (-1.0f) data and then SET the cells
                     // which have data/hits HERE without the loop (?)
                     #if CAFFE_ENABLE
-                        google::protobuf::RepeatedField<float>* datumFloatData = datum.mutable_float_data();
-                        for(int32_t ix{0}; ix < caffe_ix - 1; ++ ix)
-                        {
-                            datumFloatData->Add(-1.0f); // TODO! THIS LOOKS LIKE HITS ON z=0.0 !!! FIXME
-                        }
+                        //google::protobuf::RepeatedField<float>* datumFloatData = datum.mutable_float_data();
+                        //for(int32_t ix{0}; ix < caffe_ix - 1; ++ ix)
+                        //{
+                        //    datumFloatData->Add(-1.0f); // TODO! THIS LOOKS LIKE HITS ON z=0.0 !!! FIXME
+                        //}
                         // add at ix_ix
-                        datumFloatData->Add(0.5 * (z_pos + 1.0)); // TODO: check
-                        for(int32_t ix{caffe_ix + 1}; ix < ix_max; ++ ix)
-                        {
-                            datumFloatData->Add(-1.0f);
-                        }
+                        //datumFloatData->Add(0.5 * (z_pos + 1.0)); // TODO: check
+                        datumFloatData->operator[](0.5 * (z_pos + 1.0)); // TODO: check
+                        std::cerr << "z_pos moved to: " << 0.5 * (z_pos + 1.0) << std::endl;
+                        //for(int32_t ix{caffe_ix + 1}; ix < ix_max; ++ ix)
+                        //{
+                        //    datumFloatData->Add(-1.0f);
+                        //}
                         
                         // This is done in section below
                         //datum.set_label();
