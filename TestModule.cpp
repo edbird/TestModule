@@ -33,8 +33,13 @@
     #include "/home/ecb/uid-assembler/uid_assembler.hpp"
 #endif
 
-// gen bb
+// CAFFE CPU SWITCH
 #define CAFFE_ENABLE 1
+#if CAFFE_ENABLE
+    #define CPU_ONLY
+#endif
+
+// gen bb
 #if CAFFE_ENABLE
     #include <bayeux/genbb_help/primary_particle.h>
 #endif
@@ -44,7 +49,6 @@
 #if CAFFE_ENABLE
     #include "caffe/util/io.hpp"
     #include "caffe/proto/caffe.pb.h"
-    #define CPU_ONLY
 #endif
 
 DPP_MODULE_REGISTRATION_IMPLEMENT(TestModule, "TestModule")
