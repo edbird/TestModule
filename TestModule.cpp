@@ -818,7 +818,8 @@ TestModule::process(datatools::things& workItem)
                         //datumFloatData->operator[](caffe_ix) = (0.5 * (z_pos + 1.0)); // TODO: check
                         //google::protobuf::RepeatedField<float>& datumFloatData_ref{*datumFloatData};
                         //datumFloatData_ref[caffe_ix] = (float)(0.5 * (z_pos + 1.0)); // TODO: check
-                        datumFloatData->operator[](caffe_ix) = (float)(0.5 * (z_pos + 1.0));
+                        //datumFloatData->operator[](caffe_ix) = (float)(0.5 * (z_pos + 1.0));
+                        *datumFloatData->Mutable(caffe_ix) = (float)(0.5 * (z_pos + 1.0));
                         //(*datumFloatData)[(Float_t)(0.5 * (z_pos + 1.0))]; // TODO: check
                         std::cerr << "z_pos moved to: " << 0.5 * (z_pos + 1.0) << std::endl;
                         //for(int32_t ix{caffe_ix + 1}; ix < ix_max; ++ ix)

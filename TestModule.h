@@ -38,7 +38,7 @@
 
 
 // CAFFE CPU SWITCH
-#define CAFFE_ENABLE 0
+#define CAFFE_ENABLE 1
 #if CAFFE_ENABLE
     #define CPU_ONLY
 #endif
