@@ -28,7 +28,7 @@
 
 
 // my own lib
-#define UID_ENABLE 1
+#define UID_ENABLE 0
 #if UID_ENABLE
     #include "/home/ecb/uid-assembler/uid_assembler.hpp"
 #endif
@@ -449,16 +449,19 @@ TestModule::process(datatools::things& workItem)
     std::vector<double> cell_x;
     std::vector<double> cell_y;
     std::vector<double> anodic_plasma_propagation_time;
+    std::vector<double> anodic_position;
+    std::vector<double> anodic_half_position;
 
     DT_THROW_IF(!is_initialized(), std::logic_error,
                 "Module '" << get_name() << "' is not initialized !");
     
-    // Caffe
-    caffe::Datum datum;
-    datum.set_channels(1);
-    datum.set_width(113); // TODO check
-    datum.set_height(18);
-    
+    #if CAFFE_ENABLE
+        // Caffe
+        caffe::Datum datum;
+        datum.set_channels(1);
+        datum.set_width(113); // TODO check
+        datum.set_height(18);
+    #endif
     
     // Process CD bank to obtains timestamp data
     if(workItem.has("CD"))
@@ -477,19 +480,21 @@ TestModule::process(datatools::things& workItem)
             const snemo::datamodel::calibrated_data::tracker_hit_collection_type & THCT = CD.calibrated_tracker_hits();
             
             timestamp_.count = THCT.size();
-            std::cout << "timestamp_.count = " << timestamp_.count << std::endl;
+            //std::cout << "timestamp_.count = " << timestamp_.count << std::endl;
             //int timestamp_count = THCT.size();
             //std::cout << "timestamp_count = " << timestamp_count << std::endl;
-            
-            // create Caffe data (Datum object - google protocol buffer)
-            // init to "blank" (-1.0f)
-            int32_t ix_max{2 * 9 * 113};
-            google::protobuf::RepeatedField<float>* datumFloatData = datum.mutable_float_data();
-            datumFloatData->Clear();
-            for(int32_t ix{0}; ix < ix_max; ++ ix)
-            {
-                datumFloatData->Add(-1.0f); // TODO! THIS LOOKS LIKE HITS ON z=0.0 !!! FIXME
-            }
+           
+            #if CAFFE_ENABLE
+                // create Caffe data (Datum object - google protocol buffer)
+                // init to "blank" (-1.0f)
+                int32_t ix_max{2 * 9 * 113};
+                google::protobuf::RepeatedField<float>* datumFloatData = datum.mutable_float_data();
+                datumFloatData->Clear();
+                for(int32_t ix{0}; ix < ix_max; ++ ix)
+                {
+                    datumFloatData->Add(-1.0f); // TODO! THIS LOOKS LIKE HITS ON z=0.0 !!! FIXME
+                }
+            #endif
 
             //for(int ix = 0; ix < timestamp_count; ++ ix)
             for(int ix = 0; ix < THCT.size() /*hits_.nofhits_*/; ++ ix)
@@ -500,6 +505,12 @@ TestModule::process(datatools::things& workItem)
                     const snemo::datamodel::calibrated_tracker_hit & CTH = THHT.get();
                     if(CTH.has_anode_time())
                     {
+                        // set position and half-position
+                        const double top_cathode_time_ = CTH.get_top_cathode_time();
+                        const double bottom_cathode_time_ = CTH.get_bottom_cathode_time();
+                        const double position_ = -(top_cathode_time_ - bottom_cathode_time_) / (top_cathode_time_ + bottom_cathode_time_); // TODO: no clue if this is right or not
+                        const double half_position_ = std::abs(position_);
+                        
                         double plasma_propagation_time_ = CTH.get_plasma_propagation_time();
                         
                         //for(size_t ix{0}; ix < 
@@ -744,7 +755,9 @@ TestModule::process(datatools::things& workItem)
                         // NOTE: absolute time meaning relative to some EPOCH
                         
                         anodic_plasma_propagation_time.push_back(plasma_propagation_time_);
-                        
+                        anodic_position.push_back(position_);
+                        anodic_half_position.push_back(half_position_);
+
                         //std::cout << anode_time << std::endl;
                         
                         // TIMESTAMP DATA IS OBTAINED HERE
@@ -872,6 +885,9 @@ TestModule::process(datatools::things& workItem)
     timestamp_.cell_x = &cell_x;
     timestamp_.cell_y = &cell_y;
     timestamp_.plasma_propagation_time = &anodic_plasma_propagation_time;
+    timestamp_.position = &anodic_position;
+    timestamp_.half_position = &anodic_half_position;
+
 
     if(workItem.has("SD"))
     {
@@ -1004,6 +1020,8 @@ TestModule::process(datatools::things& workItem)
         // only single side cathode time is stored
 
         plasma_propagation_time = anodic_plasma_propagation_time.at(ix) / CLHEP::microsecond;
+        position = anodic_position.at(ix) / CLHEP::mm;
+        half_position = anodic_half_position.at(ix) / CLHEP::mm;
 
         // Save values
         store_.anode_time = anode_time;
@@ -1017,7 +1035,8 @@ TestModule::process(datatools::things& workItem)
         store_.cathode_time = cathode_time;
 
         store_.plasma_propagation_time = plasma_propagation_time;
-
+        store_.position = position;
+        store_.half_position = half_position;
 
         // Print values
         #if COUT_TIMESTAMP

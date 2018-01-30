@@ -38,7 +38,7 @@
 
 
 // CAFFE CPU SWITCH
-#define CAFFE_ENABLE 1
+#define CAFFE_ENABLE 0
 #if CAFFE_ENABLE
     #define CPU_ONLY
 #endif
@@ -168,6 +168,8 @@ typedef struct TimestampStorage
     // plasma propagation time
     // vector format, as obtained from calibrated_tracker_hit class
     std::vector<double> * plasma_propagation_time;
+    std::vector<double> * position;
+    std::vector<double> * half_position;
 
 }; //timestampstorage;
 
