@@ -34,21 +34,14 @@
 #endif
 
 // CAFFE CPU SWITCH
-#define CAFFE_ENABLE 1
-#if CAFFE_ENABLE
-    #define CPU_ONLY
-#endif
+//#define CAFFE_ENABLE 1
+//#if CAFFE_ENABLE
+//    #define CPU_ONLY
+//#endif
 
 // gen bb
 #if CAFFE_ENABLE
     #include <bayeux/genbb_help/primary_particle.h>
-#endif
-
-// caffe
-///home/ecb/caffe/include
-#if CAFFE_ENABLE
-    #include "caffe/util/io.hpp"
-    #include "caffe/proto/caffe.pb.h"
 #endif
 
 DPP_MODULE_REGISTRATION_IMPLEMENT(TestModule, "TestModule")
@@ -257,6 +250,16 @@ void TestModule::initialize(const datatools::properties& myConfig,
         store_.cathode_histo = (TH1F*)0;
     #endif
 
+    #if CAFFE_ENABLE
+        // Note to self: not sure about these lines, copied from
+        // https://github.com/BVLC/caffe/blob/master/tools/convert_imageset.cpp
+        //the_db->Open("temp_caffe_db.lmdb", caffe::db::NEW);
+        db_p->Open("temp_caffe_db.lmdb", caffe::db::NEW);
+        //boost::scoped_ptr<caffe::db::Transaction> txn(the_db->NewTransaction());
+        //the_txn = the_db->NewTransaction();
+        txn_p = db_p->NewTransaction();
+    #endif
+
     this->base_module::_set_initialized(true);
     return;
 }
@@ -300,9 +303,20 @@ void TestModule::reset()
         filename_output_cpp_ = "default_cpp.root";
     #endif
 
-    this->base_module::_set_initialized(false);
+
+    #if CAFFE_ENABLE
+        // Note to self: not sure about these lines, copied from
+        // https://github.com/BVLC/caffe/blob/master/tools/convert_imageset.cpp
+        // this may be slow? should only commit every 1000 puts?
+        // Commit db
+        //the_txn->Commit();
+        txn_p->Commit();
+    #endif
     
+    
+    this->base_module::_set_initialized(false);
     return;
+    
 }
 
 void TestModule::_set_defaults() {
@@ -338,6 +352,9 @@ TestModule::~TestModule()
     //if(is_initialized()) // TODO
     //this->reset();
     return;
+    
+    
+    // TODO caffe stuff here and in other funcs.
 }
 
 dpp::base_module::process_status
@@ -436,6 +453,13 @@ TestModule::process(datatools::things& workItem)
     DT_THROW_IF(!is_initialized(), std::logic_error,
                 "Module '" << get_name() << "' is not initialized !");
     
+    // Caffe
+    caffe::Datum datum;
+    datum.set_channels(1);
+    datum.set_width(113); // TODO check
+    datum.set_height(18);
+    
+    
     // Process CD bank to obtains timestamp data
     if(workItem.has("CD"))
     {
@@ -457,10 +481,11 @@ TestModule::process(datatools::things& workItem)
             //int timestamp_count = THCT.size();
             //std::cout << "timestamp_count = " << timestamp_count << std::endl;
             
-            // create Caffe data
+            // create Caffe data (Datum object - google protocol buffer)
             // init to "blank" (-1.0f)
             int32_t ix_max{2 * 9 * 113};
             google::protobuf::RepeatedField<float>* datumFloatData = datum.mutable_float_data();
+            datumFloatData->Clear();
             for(int32_t ix{0}; ix < ix_max; ++ ix)
             {
                 datumFloatData->Add(-1.0f); // TODO! THIS LOOKS LIKE HITS ON z=0.0 !!! FIXME
@@ -777,7 +802,11 @@ TestModule::process(datatools::things& workItem)
                         //}
                         // add at ix_ix
                         //datumFloatData->Add(0.5 * (z_pos + 1.0)); // TODO: check
-                        datumFloatData->operator[](0.5 * (z_pos + 1.0)); // TODO: check
+                        //datumFloatData->operator[](caffe_ix) = (0.5 * (z_pos + 1.0)); // TODO: check
+                        //google::protobuf::RepeatedField<float>& datumFloatData_ref{*datumFloatData};
+                        //datumFloatData_ref[caffe_ix] = (float)(0.5 * (z_pos + 1.0)); // TODO: check
+                        datumFloatData->operator[](caffe_ix) = (float)(0.5 * (z_pos + 1.0));
+                        //(*datumFloatData)[(Float_t)(0.5 * (z_pos + 1.0))]; // TODO: check
                         std::cerr << "z_pos moved to: " << 0.5 * (z_pos + 1.0) << std::endl;
                         //for(int32_t ix{caffe_ix + 1}; ix < ix_max; ++ ix)
                         //{
@@ -809,6 +838,18 @@ TestModule::process(datatools::things& workItem)
                 }
             
             }
+            
+            // Note to self: not sure about these lines, copied from
+            // https://github.com/BVLC/caffe/blob/master/tools/convert_imageset.cpp
+            // sequential
+            //string key_str = caffe::format_int(line_id, 64) + "_" + lines[line_id].first;
+            
+            //TODO: need to compute SD bank caffe category 
+            
+            
+            
+
+            
         }
         else
         {
@@ -907,6 +948,22 @@ TestModule::process(datatools::things& workItem)
     {
         std::cout << "Does not have SD!" << std::endl;
     }
+    
+    
+    #if CAFFE_ENABLE
+        // CAFFE: At this point, datum object is "set" and ID flag for training
+        // category is set
+        
+        // sequential
+        //string key_str = caffe::format_int(line_id, 8) + "_" + lines[line_id].first; // TODO: what happens if change this
+        std::string key_str = caffe::format_int(gen_.caffe_category_, 8); // TODO: what happens if change this
+        // Put in db
+        std::string out;
+        //CHECK(datum.SerializeToString(&out));
+        datum.SerializeToString(&out);
+        //the_txn->Put(key_str, out);
+        txn_p->Put(key_str, out);
+    #endif
     
     
     #if PYTHON_ANALYSIS

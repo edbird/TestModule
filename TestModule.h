@@ -37,6 +37,27 @@
 //#include "falaise/snemo/datamodels/event_header.h"
 
 
+// CAFFE CPU SWITCH
+#define CAFFE_ENABLE 1
+#if CAFFE_ENABLE
+    #define CPU_ONLY
+#endif
+
+// caffe
+///home/ecb/caffe/include
+#if CAFFE_ENABLE
+    #include "boost/scoped_ptr.hpp"
+    #include "caffe/proto/caffe.pb.h"
+    #include "caffe/util/db.hpp"
+    #include "caffe/util/format.hpp"
+    #include "caffe/util/io.hpp"
+    
+    // Note to self: line copied from
+    // https://github.com/BVLC/caffe/blob/master/tools/convert_imageset.cpp
+    //#include "caffe/util/db.hpp"
+#endif
+
+
 /******************************************************************************/
 /* ANALYSIS SCRIPT SWITCH (OUTPUT MODE / TYPE SWITCH)                         */
 /******************************************************************************/
@@ -211,13 +232,30 @@ private:
     #endif
 
     // ROOT variables
-    #if PYTHON_ANALYSIST
+    #if PYTHON_ANALYSIS
         File* hfile_;
         TTree* tree_;
     #endif
     #if CPLUSPLUS_ANALYSIS
         TFile* hfile_cpp_;
         TTree* tree_cpp_;
+    #endif
+
+    #if CAFFE_ENABLE
+        // Note to self: not sure about these lines, copied from
+        // https://github.com/BVLC/caffe/blob/master/tools/convert_imageset.cpp
+        // Create new DB
+        //DataParameter_DB_LMDB - don't know how to use this yet
+        //boost::scoped_ptr<caffe::db::DB> db(caffe::db::GetDB(FLAGS_backend));
+        caffe::db::DB *db_p{caffe::db::GetDB("lmdb")};
+        //boost::scoped_ptr<caffe::db::DB> the_db(db_p);
+        
+        //boost::scoped_ptr<caffe::db::Transaction> the_txn;
+        caffe::db::Transaction *txn_p;
+        
+        // TODO this goes in the init function
+        //db->Open("temp_caffe_db.lmdb", db::NEW);
+        //scoped_ptr<db::Transaction> txn(db->NewTransaction());
     #endif
     
     DPP_MODULE_REGISTRATION_INTERFACE(TestModule)
