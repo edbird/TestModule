@@ -1,4 +1,5 @@
 #!/bin/bash
+./rmdm
 /home/ecb/Falaise/build/BuildProducts/bin/flreconstruct \
     -i ./data/flreconstruct.brio \
     -p ./TestModule.conf #\

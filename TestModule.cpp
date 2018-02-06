@@ -518,7 +518,17 @@ TestModule::process(datatools::things& workItem)
                 const snemo::datamodel::calibrated_data::tracker_hit_handle_type & THHT = THCT.at(ix);
                 if(THHT.has_data())
                 {
+
                     const snemo::datamodel::calibrated_tracker_hit & CTH = THHT.get();
+
+                    // Compute the position on the wire
+                    // truth information: get_longitudinal_position()
+                    // simulation information: get_z()
+                    // multiply by 2.0 so that result is in range -1.0 to 1.0
+                    const double cell_length = _geiger_.get_cell_length();
+                    //double z_pos{CTH.get_z() / (2900.0 * CLHEP::mm)};
+                    const double z_pos{2.0 * CTH.get_z() / cell_length};
+
                     if(CTH.has_anode_time())
                     {
                         // set position and half-position
@@ -526,7 +536,7 @@ TestModule::process(datatools::things& workItem)
                         const double bottom_cathode_time_ = CTH.get_bottom_cathode_time();
                         
                         // new variable for MC ONLY!
-                        const double truth_position_ = CTH.get_longitudinal_position();
+                        const double truth_position_ = 2.0 * CTH.get_longitudinal_position() / _geiger_.get_cell_length();
                         //const double half_position_ = std::abs(position_);
                         
                         const double position_ = -(top_cathode_time_ - bottom_cathode_time_) / (top_cathode_time_ + bottom_cathode_time_); // TODO: no clue if this is right or not
@@ -795,9 +805,9 @@ TestModule::process(datatools::things& workItem)
                     // units of mm ?
                     // What is the length of the anode wire?
                     // The DEFAULT length in geiger_regime.cc is 2900.0
-                    const double cell_length = _geiger_.get_cell_length();
+                    //const double cell_length = _geiger_.get_cell_length();
                     //double z_pos{CTH.get_z() / (2900.0 * CLHEP::mm)};
-                    double z_pos{CTH.get_z() / cell_length};
+                    //double z_pos{2.0 * CTH.get_z() / cell_length};
                     // TODO: set other channels to zero
                     
                     if(side == 0)
