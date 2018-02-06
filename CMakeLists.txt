@@ -15,7 +15,7 @@ add_library(TestModule SHARED TestModule.h TestModule.cpp)
 #set(Caffe_LIBRARIES "/opt/caffe/bin/lib/libcaffe.so")
 set(Caffe_INCLUDE_DIRS "/usr/include/caffe")
 set(Caffe_LIBRARIES "/usr/lib/libcaffe.so")
-target_link_libraries(TestModule PUBLIC Falaise::FalaiseModule)
+target_link_libraries(TestModule PUBLIC Falaise::FalaiseModule caffe)
 #target_link_libraries(TestModule FalaiseModule)
 
 #install(TARGETS TestModule DESTINATION ${CMAKE_INSTALL_PLUGINDIR})

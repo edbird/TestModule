@@ -101,6 +101,9 @@ void TestModule::initialize(const datatools::properties& myConfig,
         // Initialize the embedded random number generator:
         _random_.init(random_id, random_seed);
     }
+
+    // Initialize the Geiger regime utility
+    _geiger_.initialize(/*setup_*/myConfig);
     
     // Configuable data member
     // Extract the filename_out key from the supplied config, if
@@ -212,10 +215,14 @@ void TestModule::initialize(const datatools::properties& myConfig,
         tree_cpp_->Branch("anode_histo", &store_.anode_histo);
         tree_cpp_->Branch("deriv_histo", &store_.deriv_histo);
         tree_cpp_->Branch("cathode_histo", &store_.cathode_histo);
+
+        tree_cpp_->Branch("truth_position", &store_.truth_position);
     #endif
    
     // C++ analysis: Set variables to sensible default values
     // (most are unused)
+
+    // TODO: this occurs twice in this code?
     #if CPLUSPLUS_ANALYSIS
         store_.time = 0.0;
         store_.time = 0.0;
@@ -248,6 +255,8 @@ void TestModule::initialize(const datatools::properties& myConfig,
         store_.anode_histo = (TH1F*)0;
         store_.deriv_histo = (TH1F*)0;
         store_.cathode_histo = (TH1F*)0;
+
+        store_.truth_position = 0.0;
     #endif
 
     #if CAFFE_ENABLE
@@ -274,6 +283,7 @@ void TestModule::reset()
         _random_.reset();
     }
     _external_random_ = 0;
+    _geiger_.reset();
     _set_defaults();
     
     #if PYTHON_ANALYSIS
@@ -401,6 +411,8 @@ TestModule::process(datatools::things& workItem)
         TH1F *deriv_histo;
         TH1F *cathode_hist;
 
+        Float_t truth_position;
+
         // Set class local storage to default values
         // TODO: not needed anymore?
         store_.time = 0;
@@ -433,7 +445,9 @@ TestModule::process(datatools::things& workItem)
         store_.anode_histo = (TH1F*)0;
         store_.deriv_histo = (TH1F*)0;
         store_.cathode_histo = (TH1F*)0;
-        
+       
+        store_.truth_position = 0.0;
+
     #endif
 
     // Tempoary local storage
@@ -451,6 +465,8 @@ TestModule::process(datatools::things& workItem)
     std::vector<double> anodic_plasma_propagation_time;
     std::vector<double> anodic_position;
     std::vector<double> anodic_half_position;
+
+    std::vector<double> anodic_truth_position;
 
     DT_THROW_IF(!is_initialized(), std::logic_error,
                 "Module '" << get_name() << "' is not initialized !");
@@ -508,6 +524,11 @@ TestModule::process(datatools::things& workItem)
                         // set position and half-position
                         const double top_cathode_time_ = CTH.get_top_cathode_time();
                         const double bottom_cathode_time_ = CTH.get_bottom_cathode_time();
+                        
+                        // new variable for MC ONLY!
+                        const double truth_position_ = CTH.get_longitudinal_position();
+                        //const double half_position_ = std::abs(position_);
+                        
                         const double position_ = -(top_cathode_time_ - bottom_cathode_time_) / (top_cathode_time_ + bottom_cathode_time_); // TODO: no clue if this is right or not
                         const double half_position_ = std::abs(position_);
                         
@@ -758,6 +779,8 @@ TestModule::process(datatools::things& workItem)
                         anodic_position.push_back(position_);
                         anodic_half_position.push_back(half_position_);
 
+                        anodic_truth_position.push_back(truth_position_);
+
                         //std::cout << anode_time << std::endl;
                         
                         // TIMESTAMP DATA IS OBTAINED HERE
@@ -768,7 +791,13 @@ TestModule::process(datatools::things& workItem)
                     int32_t side{CTH.get_side()};
                     int32_t layer{CTH.get_layer()};
                     int32_t row{CTH.get_row()};
-                    double z_pos{CTH.get_z()}; // z position of hit use this to start with
+                    // z position of hit use this to start with
+                    // units of mm ?
+                    // What is the length of the anode wire?
+                    // The DEFAULT length in geiger_regime.cc is 2900.0
+                    const double cell_length = _geiger_.get_cell_length();
+                    //double z_pos{CTH.get_z() / (2900.0 * CLHEP::mm)};
+                    double z_pos{CTH.get_z() / cell_length};
                     // TODO: set other channels to zero
                     
                     if(side == 0)
@@ -889,6 +918,7 @@ TestModule::process(datatools::things& workItem)
     timestamp_.position = &anodic_position;
     timestamp_.half_position = &anodic_half_position;
 
+    timestamp_.truth_position = &anodic_truth_position;
 
     if(workItem.has("SD"))
     {
@@ -1024,6 +1054,8 @@ TestModule::process(datatools::things& workItem)
         position = anodic_position.at(ix) / CLHEP::mm;
         half_position = anodic_half_position.at(ix) / CLHEP::mm;
 
+        truth_position = anodic_truth_position.at(ix) / CLHEP::mm;
+
         // Save values
         store_.anode_time = anode_time;
         
@@ -1038,6 +1070,8 @@ TestModule::process(datatools::things& workItem)
         store_.plasma_propagation_time = plasma_propagation_time;
         store_.position = position;
         store_.half_position = half_position;
+
+        store_.truth_position = truth_position;
 
         // Print values
         #if COUT_TIMESTAMP

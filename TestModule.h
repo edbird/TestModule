@@ -32,6 +32,7 @@
 //#include "falaise/snemo/datamodels/particle_track.h"
 //#include "falaise/snemo/datamodels/calibrated_calorimeter_hit.h"
 #include "falaise/snemo/datamodels/calibrated_data.h"
+#include "falaise/snemo/processing/geiger_regime.h"
 //#include "falaise/snemo/datamodels/tracker_clustering_data.h"
 //#include "falaise/snemo/datamodels/base_trajectory_pattern.h"
 //#include "falaise/snemo/datamodels/event_header.h"
@@ -146,6 +147,8 @@ typedef struct GeneratorEventStorage
         TH1F *anode_histo = (TH1F*)0;
         TH1F *deriv_histo = (TH1F*)0;
         TH1F *cathode_histo = (TH1F*)0;
+    
+        Float_t truth_position = 0;
     };
 #endif
 
@@ -170,6 +173,8 @@ typedef struct TimestampStorage
     std::vector<double> * plasma_propagation_time;
     std::vector<double> * position;
     std::vector<double> * half_position;
+
+    std::vector<double> * truth_position;
 
 }; //timestampstorage;
 
@@ -213,7 +218,9 @@ private:
     mygsl::rng _random_;                       //!< internal PRN generator
     mygsl::rng* _external_random_;             //!< external PRN generator
     std::string _CD_label_;                    //!< The label of the calibrated data bank
-    
+   
+    snemo::processing::geiger_regime _geiger_;                     //!< Geiger regime tools
+
     #if CPLUSPLUS_ANALYSIS
         // Local storage
         // Matches data obtained from testtank
